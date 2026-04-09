@@ -1,0 +1,7 @@
+interface:
+  display_name: "Remote Cluster Workflow"
+  short_description: "Run Codex tasks in a chosen remote SSH workspace and compute allocation."
+  default_prompt: "Use $remote-cluster-workflow to run this task inside my remote project workspace with the requested environment and node settings."
+
+policy:
+  allow_implicit_invocation: true

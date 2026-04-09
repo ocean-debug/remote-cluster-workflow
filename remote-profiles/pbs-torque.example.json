@@ -1,0 +1,21 @@
+{
+  "profileName": "pbs-torque-example",
+  "sshTarget": "user@login-host",
+  "remoteShell": "bash",
+  "remoteWorkdir": "/home/user/project",
+  "preCommands": [
+    "source ~/.bashrc"
+  ],
+  "environment": {
+    "activate": "conda activate analysis-env"
+  },
+  "resource": {
+    "template": "out=$(mktemp {workdir}/.codex-qsub.XXXXXX.out) && err=$(mktemp {workdir}/.codex-qsub.XXXXXX.err) && jobid=$(printf '%s' {script_quoted} | qsub -q {queue} -l nodes={node}:ppn={cores} -N {job_name} -d {workdir_quoted} -o \"$out\" -e \"$err\") && while true; do state=$(qstat -f \"$jobid\" 2>/dev/null | awk '/job_state =/ {print $3; exit}'); if [ -z \"$state\" ] || [ \"$state\" = C ]; then break; fi; sleep 2; done && sleep 1 && cat \"$out\" && if [ -s \"$err\" ]; then cat \"$err\" >&2; fi && rm -f \"$out\" \"$err\"",
+    "defaults": {
+      "queue": "gpu",
+      "node": "gpu02",
+      "cores": "8",
+      "job_name": "codex-remote"
+    }
+  }
+}
