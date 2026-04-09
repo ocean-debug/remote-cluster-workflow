@@ -1,0 +1,46 @@
+{
+  "name": "remote-cluster-workflow",
+  "version": "0.1.0",
+  "description": "Run Codex tasks on remote servers or HPC clusters through SSH, fixed workdirs, explicit environments, and scheduler-aware compute allocation.",
+  "author": {
+    "name": "ocean-debug",
+    "email": "59615229+ocean-debug@users.noreply.github.com",
+    "url": "https://github.com/ocean-debug"
+  },
+  "homepage": "https://github.com/ocean-debug/remote-cluster-workflow",
+  "repository": "https://github.com/ocean-debug/remote-cluster-workflow",
+  "license": "MIT",
+  "keywords": [
+    "ssh",
+    "hpc",
+    "cluster",
+    "slurm",
+    "pbs",
+    "remote-execution",
+    "codex-skill"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Remote Cluster Workflow",
+    "shortDescription": "Run Codex work on remote clusters and fixed compute allocations",
+    "longDescription": "Use Remote Cluster Workflow to run Codex tasks inside a chosen remote work directory, activate a declared environment, and execute work through direct shells or schedulers such as Slurm and PBS/Torque.",
+    "developerName": "ocean-debug",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/ocean-debug/remote-cluster-workflow",
+    "privacyPolicyURL": "https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement",
+    "termsOfServiceURL": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
+    "defaultPrompt": [
+      "Run a task on my remote cluster in a chosen workdir and environment.",
+      "Verify a conda or R environment on a specific node and core count.",
+      "Run remote tests and fix failures without leaving the target workdir."
+    ],
+    "brandColor": "#1F6FEB",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg",
+    "screenshots": []
+  }
+}

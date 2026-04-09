@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Remote Cluster Workflow icon">
+  <rect width="128" height="128" rx="24" fill="#1F6FEB"/>
+  <rect x="22" y="28" width="84" height="24" rx="8" fill="#0D1117"/>
+  <rect x="22" y="76" width="84" height="24" rx="8" fill="#0D1117"/>
+  <rect x="54" y="52" width="20" height="24" rx="6" fill="#58A6FF"/>
+  <circle cx="34" cy="40" r="5" fill="#7EE787"/>
+  <circle cx="94" cy="40" r="5" fill="#7EE787"/>
+  <circle cx="34" cy="88" r="5" fill="#7EE787"/>
+  <circle cx="94" cy="88" r="5" fill="#7EE787"/>
+  <path d="M64 52V40M64 76V88" stroke="#C9D1D9" stroke-width="6" stroke-linecap="round"/>
+</svg>
