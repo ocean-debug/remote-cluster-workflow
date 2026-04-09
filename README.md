@@ -106,3 +106,7 @@ Verify the environment, then run the R script and summarize outputs.
 ## License
 
 This project is released under the MIT License. See [LICENSE](./LICENSE).
+
+## Changelog
+
+Version history is tracked in [CHANGELOG.md](./CHANGELOG.md).
