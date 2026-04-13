@@ -6,10 +6,13 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-13
+
 ### Added
 
 - UV-oriented profile example for project-local `.venv` workflows
 - UV guidance in the skill and repository README
+- Sanitized `agent1` example showing how to run a real UV project on a fixed node and core allocation
 
 ### Changed
 

@@ -98,6 +98,61 @@ Resources: gpu02, 8 cores
 Verify the environment, then run the R script and summarize outputs.
 ```
 
+## Agent1 Example
+
+This is a sanitized version of the workflow used for a real UV project named `agent1`.
+
+### Profile Shape
+
+```json
+{
+  "profileName": "my-agent1-uv-gpu02-8",
+  "sshTarget": "user@login-host",
+  "remoteWorkdir": "/home/user/my_agent_project/agent1/",
+  "preCommands": [
+    "source ~/.bashrc"
+  ],
+  "environment": {
+    "activate": "if [ -f .venv/bin/activate ]; then source .venv/bin/activate; fi"
+  },
+  "resource": {
+    "template": "qsub-wrapper-or-other-scheduler-template",
+    "defaults": {
+      "node": "gpu02",
+      "cores": "8"
+    }
+  }
+}
+```
+
+### Prompt Pattern
+
+```text
+Use $remote-cluster-workflow.
+Profile: my-agent1-uv-gpu02-8.json
+Remote workdir: /home/user/my_agent_project/agent1/
+Environment: source .venv/bin/activate
+Resources: gpu02, 8 cores
+Verify the environment, then run the agent task or tests.
+```
+
+### Why This Pattern Works Well
+
+- The project root already contains `pyproject.toml`, `uv.lock`, and `.venv/`.
+- Activating `.venv` is usually faster than `uv run ...` for day-to-day debugging.
+- `uv run ...` is still useful when you explicitly want UV to resolve or sync dependencies for the current command.
+
+### Example Verification Output
+
+Typical quick verification for this pattern should confirm:
+
+- `pwd` points at `/home/user/my_agent_project/agent1`
+- `VIRTUAL_ENV` points at `/home/user/my_agent_project/agent1/.venv`
+- `PYPROJECT_TOML=present`
+- `UV_LOCK=present`
+- `which python` resolves to `.venv/bin/python`
+- `which uv` resolves to the installed UV binary
+
 ## Example Profile Types
 
 - [`profile-template.json`](./remote-profiles/profile-template.json): minimal starting point
