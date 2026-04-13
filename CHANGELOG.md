@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- UV-oriented profile example for project-local `.venv` workflows
+- UV guidance in the skill and repository README
+
+### Changed
+
+- Environment verification now reports `VIRTUAL_ENV`, `pyproject.toml`, `uv.lock`, Python executable path, and `uv --version` when available
+- Profile schema now documents how to use `source .venv/bin/activate` or `uv run ...` with remote project roots
+- UV guidance now recommends activating an existing `.venv` for quick checks when `uv run ...` would otherwise trigger dependency resolution or source builds
+
 ## [0.1.0] - 2026-04-09
 
 ### Added

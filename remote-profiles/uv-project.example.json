@@ -1,0 +1,23 @@
+{
+  "profileName": "uv-project-example",
+  "sshTarget": "user@login-host",
+  "sshOptions": [
+    "-p",
+    "22"
+  ],
+  "remoteShell": "bash",
+  "remoteWorkdir": "/home/user/my-agent-project",
+  "preCommands": [
+    "source ~/.bashrc"
+  ],
+  "environment": {
+    "activate": "if [ -f .venv/bin/activate ]; then source .venv/bin/activate; fi"
+  },
+  "resource": {
+    "template": "bash -lc {command_quoted}",
+    "defaults": {
+      "node": "login",
+      "cores": "4"
+    }
+  }
+}

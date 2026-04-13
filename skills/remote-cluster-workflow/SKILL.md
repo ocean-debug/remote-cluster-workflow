@@ -13,10 +13,10 @@ Remote profiles live in `%USERPROFILE%\\.codex\remote-profiles`. Each profile de
 
 - SSH target and options
 - Remote working directory
-- Shell bootstrap and environment activation
+- Shell bootstrap and environment activation for `conda`, `venv`, or UV-managed `.venv` setups
 - Resource wrapper template for direct shells, `srun`, or other schedulers
 
-For environments you use often, prefer one dedicated profile per environment and resource shape instead of repeatedly editing one shared profile. Example: keep separate profiles for `r4.0.5`, `r4.2`, or common Python environments.
+For environments you use often, prefer one dedicated profile per environment and resource shape instead of repeatedly editing one shared profile. Example: keep separate profiles for `r4.0.5`, `r4.2`, a common Python environment, or a UV project rooted at `/path/to/project`.
 
 ## Workflow
 
@@ -25,9 +25,10 @@ For environments you use often, prefer one dedicated profile per environment and
 3. When a profile is new or recently changed, run `scripts/test-remote-profile.ps1` first.
 4. Execute remote work through `scripts/invoke-remote-task.ps1`.
 5. Keep all task commands inside the configured `remoteWorkdir`.
-6. If the user authorizes environment changes, install packages inside the requested environment and report what changed.
-7. Use the profile's `resource.template` to honor node and core requests. If the wrapper is missing or ambiguous, pause and ask one concise question before using expensive resources.
-8. Prefer non-interactive commands and summarize the important results back to the user.
+6. For UV projects, point `remoteWorkdir` at the project root. If the project already has `.venv`, set `environment.activate` to `source .venv/bin/activate`. If the project prefers ephemeral execution, leave activation empty and run task commands as `uv run ...`.
+7. If the user authorizes environment changes, install packages inside the requested environment and report what changed. For UV projects, prefer `uv sync`, `uv add`, or `uv remove` inside the project root instead of mixing in unrelated package managers. When a project already has a healthy `.venv`, prefer activating it for quick verification because `uv run ...` may trigger dependency resolution or source builds.
+8. Use the profile's `resource.template` to honor node and core requests. If the wrapper is missing or ambiguous, pause and ask one concise question before using expensive resources.
+9. Prefer non-interactive commands and summarize the important results back to the user.
 
 ## Guardrails
 
@@ -57,6 +58,27 @@ Quickly verify the active environment on the configured node and cores:
   -Cores 8
 ```
 
+Run a UV-managed project after activating its local `.venv`:
+
+```powershell
+& "%USERPROFILE%\\.codex\skills\remote-cluster-workflow\scripts\invoke-remote-task.cmd" `
+  -Profile "%USERPROFILE%\\.codex\remote-profiles\my-uv-project.json" `
+  -Command "python main.py" `
+  -Node "gpu02" `
+  -Cores 8
+```
+
+Run a UV-managed project without an explicit activation step:
+
+```powershell
+& "%USERPROFILE%\\.codex\skills\remote-cluster-workflow\scripts\invoke-remote-task.cmd" `
+  -Profile "%USERPROFILE%\\.codex\remote-profiles\my-uv-project.json" `
+  -Command "uv run python main.py" `
+  -Node "gpu02" `
+  -Cores 8 `
+  -SkipEnvironment
+```
+
 Run a task:
 
 ```powershell
@@ -81,6 +103,6 @@ Pass additional scheduler variables:
 ## When To Read References
 
 - Read `references/profile-schema.md` when creating or editing a remote profile.
-- Read `references/example-profiles.md` when the user needs a direct-shell or Slurm-style example.
+- Read `references/example-profiles.md` when the user needs a direct-shell, Slurm, or UV project example.
 - Read `references/password-bootstrap.md` when the user currently logs in with a password through MobaXterm and wants Codex to take over future remote work.
 

@@ -33,9 +33,17 @@ Remote profiles are JSON files stored in `%USERPROFILE%\\.codex\remote-profiles`
 - `remoteShell`: Optional shell executable. Default is `bash`.
 - `remoteWorkdir`: Every task command is executed from here.
 - `preCommands`: Optional array of shell commands run before `cd remoteWorkdir`.
-- `environment.activate`: Optional activation command such as `conda activate env`, `mamba activate env`, `source venv/bin/activate`, or module-loading commands.
+- `environment.activate`: Optional activation command such as `conda activate env`, `mamba activate env`, `source venv/bin/activate`, `source .venv/bin/activate`, or module-loading commands.
 - `resource.template`: Wrapper used to honor resource requests. It must include `{command_quoted}` and may include placeholders such as `{node}`, `{cores}`, `{partition}`, `{gpus}`, or `{memory}`.
 - `resource.defaults`: Default values for wrapper placeholders. User-specified `-Node`, `-Cores`, and `-Vars key=value` override these defaults.
+
+## UV Notes
+
+- For UV projects, set `remoteWorkdir` to the project root that contains `pyproject.toml` and `uv.lock`.
+- If `.venv` already exists inside the project, set `environment.activate` to `source .venv/bin/activate`.
+- If you prefer `uv run ...` on each command, you can leave `environment.activate` blank and pass `-SkipEnvironment` to `invoke-remote-task`.
+- Prefer activating an existing `.venv` for quick verification runs. `uv run ...` may sync dependencies or build packages from source if the environment is not already ready.
+- Use environment changes that match the workflow: `uv sync`, `uv add`, and `uv remove` are usually safer than mixing UV with unrelated package managers inside the same project.
 
 ## Placeholder Rules
 

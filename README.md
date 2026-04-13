@@ -13,7 +13,7 @@ This repository is packaged in two useful ways:
 
 - connect to a remote machine with local `ssh`
 - stay inside one declared remote work directory
-- activate a chosen `conda`, `venv`, or R environment
+- activate a chosen `conda`, `venv`, UV-managed `.venv`, or R environment
 - run work on direct shells, Slurm, PBS/Torque, or similar schedulers
 - verify environments quickly before longer jobs
 - run tests, inspect failures, and summarize results
@@ -36,6 +36,7 @@ This repository is packaged in two useful ways:
 +-- remote-profiles/
     +-- profile-template.json
     +-- direct-shell.example.json
+    +-- uv-project.example.json
     +-- slurm-srun.example.json
     +-- pbs-torque.example.json
 ```
@@ -54,7 +55,11 @@ This repository is packaged in two useful ways:
    - `environment.activate`
    - `resource.template`
    - `resource.defaults`
-4. Use `$remote-cluster-workflow` in Codex.
+4. For UV projects, point `remoteWorkdir` at the project root. Then choose one of two patterns:
+   - activate the project venv with `source .venv/bin/activate`
+   - or leave activation empty and run tasks with `uv run ...`
+   For quick validation, the first pattern is usually faster and more stable. `uv run ...` may sync dependencies or build native extensions if the project environment is not already ready.
+5. Use `$remote-cluster-workflow` in Codex.
 
 ### Option 2: Use It As A Plugin-Shaped Repo
 
@@ -77,6 +82,15 @@ Run tests and fix failures.
 
 ```text
 Use $remote-cluster-workflow.
+Profile: my-uv-profile.json
+Remote workdir: /home/user/my_agent_project/agent1
+Environment: source .venv/bin/activate
+Resources: gpu02, 8 cores
+Verify the UV environment, then run the agent tests.
+```
+
+```text
+Use $remote-cluster-workflow.
 Profile: my-r-profile.json
 Remote workdir: /data/analysis/C5
 Environment: conda activate r4.2
@@ -88,6 +102,7 @@ Verify the environment, then run the R script and summarize outputs.
 
 - [`profile-template.json`](./remote-profiles/profile-template.json): minimal starting point
 - [`direct-shell.example.json`](./remote-profiles/direct-shell.example.json): login host runs the commands directly
+- [`uv-project.example.json`](./remote-profiles/uv-project.example.json): project-local `.venv` activated from a UV-managed root
 - [`slurm-srun.example.json`](./remote-profiles/slurm-srun.example.json): use `srun` for node/core requests
 - [`pbs-torque.example.json`](./remote-profiles/pbs-torque.example.json): use `qsub` for PBS/Torque clusters
 
