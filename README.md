@@ -87,6 +87,23 @@ The exact marketplace wiring varies by local Codex setup, but this repo now has 
 - Choose UV for project-local Python apps that already live around `pyproject.toml` and `uv.lock`.
 - When both are possible, prefer the already-warmed environment for faster remote validation.
 
+## `.venv` Activation vs `uv run`
+
+| Goal | `.venv` activation flow | `uv run` flow |
+| --- | --- | --- |
+| Quick environment check | `verify-remote-env.cmd -Profile my-uv-profile.json -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv run python --version" -Node gpu02 -Cores 8 -SkipEnvironment` |
+| Run the main app | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "python main.py" -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv run python main.py" -Node gpu02 -Cores 8 -SkipEnvironment` |
+| Run pytest | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "python -m pytest -q" -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv run pytest -q" -Node gpu02 -Cores 8 -SkipEnvironment` |
+| Install or sync deps | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "python -m pip install -e ." -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv sync" -Node gpu02 -Cores 8 -SkipEnvironment` |
+| Add one dependency | Usually avoid mixing `pip` into a UV-managed project unless you know why | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv add rich" -Node gpu02 -Cores 8 -SkipEnvironment` |
+
+### Practical Advice
+
+- Prefer the `.venv` activation flow when the project environment already works and you want the fastest debug loop.
+- Prefer `uv run` when you intentionally want the command to respect the current lockfile and dependency graph.
+- Prefer `uv sync` and `uv add` over `pip install` for UV-managed projects, so `pyproject.toml` and `uv.lock` stay aligned.
+- If `uv run` starts compiling packages on a cluster node, switch back to the warmed `.venv` flow unless you explicitly need a fresh resolution.
+
 ## Example Prompts
 
 ```text

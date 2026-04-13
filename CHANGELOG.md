@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Added
 
 - README comparison table for choosing between Conda and UV workflows
+- README command table comparing `.venv` activation flow with `uv run` flow
 
 ## [0.1.1] - 2026-04-13
 
