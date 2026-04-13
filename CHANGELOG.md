@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+
+- README comparison table for choosing between Conda and UV workflows
+
 ## [0.1.1] - 2026-04-13
 
 ### Added

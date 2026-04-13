@@ -69,6 +69,24 @@ This repository is packaged in two useful ways:
 
 The exact marketplace wiring varies by local Codex setup, but this repo now has the expected plugin manifest and `skills/` layout.
 
+## Conda vs UV
+
+| Situation | Prefer | Why |
+| --- | --- | --- |
+| You already have a stable shared environment such as `r4.2` or `analysis-env` | Conda | Good fit for team-wide environments, R stacks, and long-lived shared packages |
+| Your project already contains `pyproject.toml`, `uv.lock`, and `.venv/` | UV with `source .venv/bin/activate` | Fastest day-to-day debugging path for project-local Python environments |
+| You want the command to respect the project's locked Python dependencies | UV with `uv run ...` | Lets UV resolve or sync against the project definition for that command |
+| You are only doing a quick environment or smoke check | Existing `.venv` or existing Conda env | Avoids unnecessary dependency resolution and native rebuilds |
+| You need to add or remove Python dependencies inside a UV project | UV | `uv add`, `uv remove`, and `uv sync` keep the project definition and lockfile consistent |
+| You need a mixed R or system-tool-heavy analysis environment | Conda | Usually simpler than forcing non-Python tooling into a UV workflow |
+| `uv run ...` starts building packages or compiling native extensions | Existing `.venv` first | More stable for iterative debugging, especially on shared clusters |
+
+### Rule Of Thumb
+
+- Choose Conda for shared, long-lived, multi-language environments.
+- Choose UV for project-local Python apps that already live around `pyproject.toml` and `uv.lock`.
+- When both are possible, prefer the already-warmed environment for faster remote validation.
+
 ## Example Prompts
 
 ```text
