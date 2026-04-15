@@ -1,4 +1,157 @@
+[English](#english) | [中文](#中文)
+
 # remote-cluster-workflow
+
+> Run Codex tasks on remote Linux servers or HPC clusters through SSH, fixed workdirs, explicit environments, and scheduler-aware resource allocation.
+
+---
+
+## English
+
+`remote-cluster-workflow` is a Codex skill for running work on user-managed remote Linux servers or HPC clusters instead of only on the local machine.
+
+It helps with:
+
+- connecting to remote machines through local `ssh`
+- fixing the remote workdir, environment activation, and resource wrapper through remote profiles
+- running commands on login nodes, direct shells, or schedulers such as Slurm `srun`
+- validating the profile and environment before real execution
+- avoiding unsafe guessing for expensive cluster resources such as `node`, `cores`, `partition`, `gpus`, and `memory`
+
+### Repository Layout
+
+```text
+remote-cluster-workflow/
+  SKILL.md
+  README.md
+  test-prompts.json
+  results.tsv
+  agents/
+  references/
+  scripts/
+```
+
+### Core Files
+
+- `SKILL.md`: main skill definition
+- `test-prompts.json`: dry-run evaluation prompts
+- `results.tsv`: evaluation and optimization history
+- `references/`: profile schema, examples, and password-bootstrap notes
+- `scripts/`: remote execution and environment verification scripts
+
+### Installation
+
+Copy the whole repository into your local Codex skills directory, for example:
+
+```text
+%USERPROFILE%\.codex\skills\remote-cluster-workflow
+```
+
+Then restart Codex so the skill is loaded.
+
+### Dependencies
+
+This skill depends on remote profiles. Profiles are expected at:
+
+```text
+%USERPROFILE%\.codex\remote-profiles
+```
+
+A profile usually defines at least:
+
+- `sshTarget`
+- `remoteWorkdir`
+- `environment.activate`
+- `resource.template`
+
+If you need to create or edit a profile, read:
+
+- `references/profile-schema.md`
+- `references/example-profiles.md`
+
+If you currently rely on password login through MobaXterm, read:
+
+- `references/password-bootstrap.md`
+
+### Good Fit
+
+Use this skill when you want to:
+
+- run tests on a remote server
+- ssh into a cluster and execute training
+- use a specific profile on a login node
+- inspect a remote `conda`, `venv`, or UV environment
+- run work on a cluster with explicit resource requests
+
+Do not use it for:
+
+- purely local tasks
+- documentation-only questions with no real execution
+- manual workflows that depend on the visible state of a MobaXterm window
+
+### Prompt Examples
+
+```text
+Use profile ml-gpu03 and run pytest remotely for tests/test_model.py on gpu03 with 8 cores.
+```
+
+```text
+Check whether the UV project at /data/agent-app can start on the remote server.
+```
+
+```text
+Run python train.py --epochs 1 on the cluster, but do not guess resources. Ask me for any missing allocation details.
+```
+
+### Recommended Execution Order
+
+1. Select the matching profile
+2. Run `test-remote-profile`
+3. If the task depends on an environment, run `verify-remote-env`
+4. Use `invoke-remote-task` for the real task
+5. Summarize the important result back to the user
+
+### Common Scripts
+
+- `scripts/test-remote-profile.cmd`
+- `scripts/verify-remote-env.cmd`
+- `scripts/invoke-remote-task.cmd`
+
+Example profile test:
+
+```powershell
+& "%USERPROFILE%\.codex\skills\remote-cluster-workflow\scripts\test-remote-profile.cmd" `
+  -Profile "%USERPROFILE%\.codex\remote-profiles\my-profile.json" `
+  -Node "gpu03" `
+  -Cores 8
+```
+
+Example task execution:
+
+```powershell
+& "%USERPROFILE%\.codex\skills\remote-cluster-workflow\scripts\invoke-remote-task.cmd" `
+  -Profile "%USERPROFILE%\.codex\remote-profiles\my-profile.json" `
+  -Command "python -m pytest tests/test_model.py -q" `
+  -Node "gpu03" `
+  -Cores 8
+```
+
+### Testing and Scoring
+
+The repository includes two evaluation helper files:
+
+- `test-prompts.json`: typical prompts for dry-run evaluation
+- `results.tsv`: recorded evaluation and optimization results
+
+If you continue improving this skill, a good workflow is:
+
+1. add or revise `test-prompts.json`
+2. update `SKILL.md`
+3. append the evaluation result to `results.tsv`
+
+This keeps each optimization round traceable.
+
+---
 
 ## 中文
 
@@ -12,9 +165,7 @@
 - 在真正跑任务前先验证 profile 和环境
 - 在高成本集群资源场景下避免盲猜 `node`、`cores`、`partition`、`gpus`、`memory`
 
-### 仓库内容
-
-这个仓库现在就是一个纯 skill 仓库，根目录就是正式 skill 来源。
+### 仓库结构
 
 ```text
 remote-cluster-workflow/
@@ -27,7 +178,7 @@ remote-cluster-workflow/
   scripts/
 ```
 
-说明：
+### 核心文件
 
 - `SKILL.md`：skill 主说明
 - `test-prompts.json`：dry-run 测试 prompt
@@ -146,152 +297,3 @@ profile 里通常至少要定义：
 3. 再把评估结果追加到 `results.tsv`
 
 这样每一轮改动都可追踪。
-
----
-
-## English
-
-`remote-cluster-workflow` is a Codex skill for running work on user-managed remote Linux servers or HPC clusters instead of only on the local machine.
-
-It is designed to help with:
-
-- connecting to remote machines through local `ssh`
-- fixing the remote workdir, environment activation, and resource wrapper through remote profiles
-- running commands on login nodes, direct shells, or schedulers such as Slurm `srun`
-- validating the profile and environment before real execution
-- avoiding unsafe guessing for expensive cluster resources such as `node`, `cores`, `partition`, `gpus`, and `memory`
-
-### Repository Contents
-
-This repository is now a standalone skill repository, and the repository root is the canonical skill source.
-
-```text
-remote-cluster-workflow/
-  SKILL.md
-  README.md
-  test-prompts.json
-  results.tsv
-  agents/
-  references/
-  scripts/
-```
-
-Files and directories:
-
-- `SKILL.md`: main skill definition
-- `test-prompts.json`: dry-run evaluation prompts
-- `results.tsv`: evaluation and optimization history
-- `references/`: profile schema, examples, and password-bootstrap notes
-- `scripts/`: remote execution and environment verification scripts
-
-### Installation
-
-Copy the whole repository into your local Codex skills directory, for example:
-
-```text
-%USERPROFILE%\.codex\skills\remote-cluster-workflow
-```
-
-Then restart Codex so the skill is loaded.
-
-### Dependencies
-
-This skill depends on remote profiles. Profiles are expected at:
-
-```text
-%USERPROFILE%\.codex\remote-profiles
-```
-
-A profile usually defines at least:
-
-- `sshTarget`
-- `remoteWorkdir`
-- `environment.activate`
-- `resource.template`
-
-If you need to create or edit a profile, read:
-
-- `references/profile-schema.md`
-- `references/example-profiles.md`
-
-If you currently rely on password login through MobaXterm, read:
-
-- `references/password-bootstrap.md`
-
-### Good Fit
-
-This skill is a good fit when you want to:
-
-- run tests on a remote server
-- ssh into a cluster and execute training
-- use a specific profile on a login node
-- inspect a remote `conda`, `venv`, or UV environment
-- run work on a cluster with explicit resource requests
-
-This skill is not a good fit for:
-
-- purely local tasks
-- documentation-only questions with no real execution
-- manual workflows that depend on the visible state of a MobaXterm window
-
-### Prompt Examples
-
-```text
-Use profile ml-gpu03 and run pytest remotely for tests/test_model.py on gpu03 with 8 cores.
-```
-
-```text
-Check whether the UV project at /data/agent-app can start on the remote server.
-```
-
-```text
-Run python train.py --epochs 1 on the cluster, but do not guess resources. Ask me for any missing allocation details.
-```
-
-### Recommended Execution Order
-
-1. Select the matching profile
-2. Run `test-remote-profile`
-3. If the task depends on an environment, run `verify-remote-env`
-4. Use `invoke-remote-task` for the real task
-5. Summarize the important result back to the user
-
-### Common Scripts
-
-- `scripts/test-remote-profile.cmd`
-- `scripts/verify-remote-env.cmd`
-- `scripts/invoke-remote-task.cmd`
-
-Example profile test:
-
-```powershell
-& "%USERPROFILE%\.codex\skills\remote-cluster-workflow\scripts\test-remote-profile.cmd" `
-  -Profile "%USERPROFILE%\.codex\remote-profiles\my-profile.json" `
-  -Node "gpu03" `
-  -Cores 8
-```
-
-Example task execution:
-
-```powershell
-& "%USERPROFILE%\.codex\skills\remote-cluster-workflow\scripts\invoke-remote-task.cmd" `
-  -Profile "%USERPROFILE%\.codex\remote-profiles\my-profile.json" `
-  -Command "python -m pytest tests/test_model.py -q" `
-  -Node "gpu03" `
-  -Cores 8
-```
-
-### Testing and Scoring
-
-The repository includes two evaluation helper files:
-
-- `test-prompts.json`: typical prompts for dry-run evaluation
-- `results.tsv`: recorded evaluation and optimization results
-
-If you continue improving this skill, a good workflow is:
-
-1. add or revise `test-prompts.json`
-2. update `SKILL.md`
-3. append the evaluation result to `results.tsv`
-
-This keeps each optimization round traceable.
