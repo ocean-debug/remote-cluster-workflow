@@ -1,234 +1,154 @@
-# Remote Cluster Workflow
+# remote-cluster-workflow
 
-Run Codex tasks on remote Linux servers or HPC clusters through SSH, a fixed remote work directory, a chosen environment, and an explicit compute allocation.
+`remote-cluster-workflow` 是一个给 Codex 使用的 skill，用来把任务稳定地执行到用户自管的远端 Linux 服务器或 HPC 集群上，而不是只在本机运行。
 
-This repository is organized around one canonical root-level skill source:
+它主要解决这些问题：
 
-- The canonical skill files live at the repository root: [`SKILL.md`](./SKILL.md), [`test-prompts.json`](./test-prompts.json), and [`results.tsv`](./results.tsv)
-- The repository also includes [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) and a mirrored copy under [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow) for plugin-shaped installation
+- 通过本地 `ssh` 连接远端
+- 通过 remote profile 固定远端工作目录、环境激活方式和资源模板
+- 在 login node、直连主机、Slurm `srun` 等场景下执行命令
+- 在真正跑任务前先验证 profile 和环境
+- 在高成本集群资源场景下避免盲猜 node、cores、partition、gpus、memory
 
-Treat the repository root as the source of truth. The copy under `skills/remote-cluster-workflow/` exists as a packaged mirror for plugin or marketplace-style layouts.
+## 仓库内容
 
-## What It Does
+这个仓库现在就是一个纯 skill 仓库，根目录就是正式 skill 来源。
 
-`remote-cluster-workflow` helps Codex:
-
-- connect to a remote machine with local `ssh`
-- stay inside one declared remote work directory
-- activate a chosen `conda`, `venv`, UV-managed `.venv`, or R environment
-- run work on direct shells, Slurm, PBS/Torque, or similar schedulers
-- verify environments quickly before longer jobs
-- run tests, inspect failures, and summarize results
-
-## Repository Layout
+主要文件和目录：
 
 ```text
-.
-+-- .codex-plugin/
-|   +-- plugin.json
-+-- assets/
-|   +-- icon.svg
-|   +-- logo.svg
-+-- SKILL.md
-+-- test-prompts.json
-+-- results.tsv
-+-- skills/
-|   +-- remote-cluster-workflow/
-|       +-- SKILL.md
-|       +-- README.md
-|       +-- test-prompts.json
-|       +-- results.tsv
-|       +-- agents/openai.yaml
-|       +-- references/
-|       +-- scripts/
-+-- remote-profiles/
-    +-- profile-template.json
-    +-- direct-shell.example.json
-    +-- uv-project.example.json
-    +-- slurm-srun.example.json
-    +-- pbs-torque.example.json
+remote-cluster-workflow/
+  SKILL.md
+  README.md
+  test-prompts.json
+  results.tsv
+  agents/
+  references/
+  scripts/
 ```
 
-## Quick Start
+其中：
 
-### Option 1: Use It As A Skill
+- `SKILL.md`：skill 主说明
+- `test-prompts.json`：dry-run 测试 prompt
+- `results.tsv`：评估和优化记录
+- `references/`：profile schema、示例和密码登录切换说明
+- `scripts/`：远端调用和环境校验脚本
 
-1. Copy the root-level canonical skill files and folders into your local Codex skill directory, or copy the packaged mirror from [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow).
-   Windows example target: `%USERPROFILE%\.codex\skills\remote-cluster-workflow`
-2. If you are installing manually, make sure the final local skill directory contains:
-   - `SKILL.md`
-   - `test-prompts.json`
-   - `results.tsv`
-   - `references/`
-   - `scripts/`
-   - `agents/`
-3. Copy one of the example profiles from [`remote-profiles`](./remote-profiles) into your local remote profile directory.
-   Windows example: `%USERPROFILE%\.codex\remote-profiles\`
-4. Edit the copied profile for your own infrastructure:
-   - `sshTarget`
-   - `remoteWorkdir`
-   - `environment.activate`
-   - `resource.template`
-   - `resource.defaults`
-5. For UV projects, point `remoteWorkdir` at the project root. Then choose one of two patterns:
-   - activate the project venv with `source .venv/bin/activate`
-   - or leave activation empty and run tasks with `uv run ...`
-   For quick validation, the first pattern is usually faster and more stable. `uv run ...` may sync dependencies or build native extensions if the project environment is not already ready.
-6. Use `$remote-cluster-workflow` in Codex.
+## 安装
 
-### Option 2: Use It As A Plugin-Shaped Repo
-
-1. Clone this repository into your local plugin directory.
-2. Keep the repo root intact so Codex can read [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json).
-3. If your Codex setup uses plugin marketplace wiring, point it at this repo-local plugin.
-
-The exact marketplace wiring varies by local Codex setup, but this repo now has the expected plugin manifest and `skills/` layout.
-
-## Conda vs UV
-
-| Situation | Prefer | Why |
-| --- | --- | --- |
-| You already have a stable shared environment such as `r4.2` or `analysis-env` | Conda | Good fit for team-wide environments, R stacks, and long-lived shared packages |
-| Your project already contains `pyproject.toml`, `uv.lock`, and `.venv/` | UV with `source .venv/bin/activate` | Fastest day-to-day debugging path for project-local Python environments |
-| You want the command to respect the project's locked Python dependencies | UV with `uv run ...` | Lets UV resolve or sync against the project definition for that command |
-| You are only doing a quick environment or smoke check | Existing `.venv` or existing Conda env | Avoids unnecessary dependency resolution and native rebuilds |
-| You need to add or remove Python dependencies inside a UV project | UV | `uv add`, `uv remove`, and `uv sync` keep the project definition and lockfile consistent |
-| You need a mixed R or system-tool-heavy analysis environment | Conda | Usually simpler than forcing non-Python tooling into a UV workflow |
-| `uv run ...` starts building packages or compiling native extensions | Existing `.venv` first | More stable for iterative debugging, especially on shared clusters |
-
-### Rule Of Thumb
-
-- Choose Conda for shared, long-lived, multi-language environments.
-- Choose UV for project-local Python apps that already live around `pyproject.toml` and `uv.lock`.
-- When both are possible, prefer the already-warmed environment for faster remote validation.
-
-## `.venv` Activation vs `uv run`
-
-| Goal | `.venv` activation flow | `uv run` flow |
-| --- | --- | --- |
-| Quick environment check | `verify-remote-env.cmd -Profile my-uv-profile.json -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv run python --version" -Node gpu02 -Cores 8 -SkipEnvironment` |
-| Run the main app | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "python main.py" -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv run python main.py" -Node gpu02 -Cores 8 -SkipEnvironment` |
-| Run pytest | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "python -m pytest -q" -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv run pytest -q" -Node gpu02 -Cores 8 -SkipEnvironment` |
-| Install or sync deps | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "python -m pip install -e ." -Node gpu02 -Cores 8` | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv sync" -Node gpu02 -Cores 8 -SkipEnvironment` |
-| Add one dependency | Usually avoid mixing `pip` into a UV-managed project unless you know why | `invoke-remote-task.cmd -Profile my-uv-profile.json -Command "uv add rich" -Node gpu02 -Cores 8 -SkipEnvironment` |
-
-### Practical Advice
-
-- Prefer the `.venv` activation flow when the project environment already works and you want the fastest debug loop.
-- Prefer `uv run` when you intentionally want the command to respect the current lockfile and dependency graph.
-- Prefer `uv sync` and `uv add` over `pip install` for UV-managed projects, so `pyproject.toml` and `uv.lock` stay aligned.
-- If `uv run` starts compiling packages on a cluster node, switch back to the warmed `.venv` flow unless you explicitly need a fresh resolution.
-
-## Example Prompts
+把整个仓库内容放到本机 Codex skills 目录下，例如：
 
 ```text
-Use $remote-cluster-workflow.
-Profile: my-pbs-profile.json
-Remote workdir: /path/to/project
-Environment: conda activate my-env
-Resources: gpu02, 8 cores
-Run tests and fix failures.
+%USERPROFILE%\.codex\skills\remote-cluster-workflow
+```
+
+然后重启 Codex 让 skill 生效。
+
+## 依赖
+
+这个 skill 依赖 remote profile。profile 默认放在：
+
+```text
+%USERPROFILE%\.codex\remote-profiles
+```
+
+profile 里通常至少要定义：
+
+- `sshTarget`
+- `remoteWorkdir`
+- `environment.activate`
+- `resource.template`
+
+如果你要创建或修改 profile，先看：
+
+- `references/profile-schema.md`
+- `references/example-profiles.md`
+
+如果你目前还只能通过 MobaXterm 密码登录，先看：
+
+- `references/password-bootstrap.md`
+
+## 适用场景
+
+这个 skill 适合：
+
+- “去远端服务器帮我跑测试”
+- “ssh 到集群上执行训练”
+- “用某个 profile 去 login node 跑命令”
+- “帮我检查远端 conda / venv / UV 环境”
+- “帮我在集群上分配指定 node 和 cores 跑任务”
+
+这个 skill 不适合：
+
+- 纯本地任务
+- 只想看 profile 写法，不需要真实执行
+- 依赖 MobaXterm 窗口状态的临时人工操作
+
+## 推荐调用方式
+
+最简单的理解是：只要用户明确要求“去远端跑”，这个 skill 就应该触发。
+
+典型 prompt 例子：
+
+```text
+帮我用 ml-gpu03 这个 profile 在远端跑 pytest，只跑 tests/test_model.py，gpu03，8 核。
 ```
 
 ```text
-Use $remote-cluster-workflow.
-Profile: my-uv-profile.json
-Remote workdir: /home/user/my_agent_project/agent1
-Environment: source .venv/bin/activate
-Resources: gpu02, 8 cores
-Verify the UV environment, then run the agent tests.
+去远端服务器帮我看一下 /data/agent-app 这个 UV 项目能不能启动。
 ```
 
 ```text
-Use $remote-cluster-workflow.
-Profile: my-r-profile.json
-Remote workdir: /data/analysis/C5
-Environment: conda activate r4.2
-Resources: gpu02, 8 cores
-Verify the environment, then run the R script and summarize outputs.
+帮我在集群上跑 python train.py --epochs 1，先别乱猜资源，缺什么就问我。
 ```
 
-## Agent1 Example
+## 推荐执行顺序
 
-This is a sanitized version of the workflow used for a real UV project named `agent1`.
+建议按这个顺序使用：
 
-### Profile Shape
+1. 选择匹配的 profile
+2. 运行 `test-remote-profile`
+3. 如果任务依赖环境，运行 `verify-remote-env`
+4. 再用 `invoke-remote-task` 真正执行任务
+5. 汇总关键结果给用户
 
-```json
-{
-  "profileName": "my-agent1-uv-gpu02-8",
-  "sshTarget": "user@login-host",
-  "remoteWorkdir": "/home/user/my_agent_project/agent1/",
-  "preCommands": [
-    "source ~/.bashrc"
-  ],
-  "environment": {
-    "activate": "if [ -f .venv/bin/activate ]; then source .venv/bin/activate; fi"
-  },
-  "resource": {
-    "template": "qsub-wrapper-or-other-scheduler-template",
-    "defaults": {
-      "node": "gpu02",
-      "cores": "8"
-    }
-  }
-}
+## 常用脚本
+
+- `scripts/test-remote-profile.cmd`
+- `scripts/verify-remote-env.cmd`
+- `scripts/invoke-remote-task.cmd`
+
+例如先测试 profile：
+
+```powershell
+& "%USERPROFILE%\.codex\skills\remote-cluster-workflow\scripts\test-remote-profile.cmd" `
+  -Profile "%USERPROFILE%\.codex\remote-profiles\my-profile.json" `
+  -Node "gpu03" `
+  -Cores 8
 ```
 
-### Prompt Pattern
+再执行任务：
 
-```text
-Use $remote-cluster-workflow.
-Profile: my-agent1-uv-gpu02-8.json
-Remote workdir: /home/user/my_agent_project/agent1/
-Environment: source .venv/bin/activate
-Resources: gpu02, 8 cores
-Verify the environment, then run the agent task or tests.
+```powershell
+& "%USERPROFILE%\.codex\skills\remote-cluster-workflow\scripts\invoke-remote-task.cmd" `
+  -Profile "%USERPROFILE%\.codex\remote-profiles\my-profile.json" `
+  -Command "python -m pytest tests/test_model.py -q" `
+  -Node "gpu03" `
+  -Cores 8
 ```
 
-### Why This Pattern Works Well
+## 测试与评分
 
-- The project root already contains `pyproject.toml`, `uv.lock`, and `.venv/`.
-- Activating `.venv` is usually faster than `uv run ...` for day-to-day debugging.
-- `uv run ...` is still useful when you explicitly want UV to resolve or sync dependencies for the current command.
+仓库里已经包含两份评估辅助文件：
 
-### Example Verification Output
+- `test-prompts.json`：用于 dry-run 的典型 prompt 集
+- `results.tsv`：记录每轮评估和优化结果
 
-Typical quick verification for this pattern should confirm:
+如果后续继续优化这个 skill，建议流程是：
 
-- `pwd` points at `/home/user/my_agent_project/agent1`
-- `VIRTUAL_ENV` points at `/home/user/my_agent_project/agent1/.venv`
-- `PYPROJECT_TOML=present`
-- `UV_LOCK=present`
-- `which python` resolves to `.venv/bin/python`
-- `which uv` resolves to the installed UV binary
+1. 先补或更新 `test-prompts.json`
+2. 修改 `SKILL.md`
+3. 再把评估结果追加到 `results.tsv`
 
-## Example Profile Types
-
-- [`profile-template.json`](./remote-profiles/profile-template.json): minimal starting point
-- [`direct-shell.example.json`](./remote-profiles/direct-shell.example.json): login host runs the commands directly
-- [`uv-project.example.json`](./remote-profiles/uv-project.example.json): project-local `.venv` activated from a UV-managed root
-- [`slurm-srun.example.json`](./remote-profiles/slurm-srun.example.json): use `srun` for node/core requests
-- [`pbs-torque.example.json`](./remote-profiles/pbs-torque.example.json): use `qsub` for PBS/Torque clusters
-
-## Security Notes
-
-- This repository does not include any private hostnames, usernames, internal IPs, project paths, or personal environment names.
-- If a server still uses password login, bootstrap SSH key access first. See [`password-bootstrap.md`](./skills/remote-cluster-workflow/references/password-bootstrap.md).
-- Keep private profiles outside the public repository unless you have scrubbed all sensitive details.
-
-## Development Notes
-
-- The canonical skill source lives at the repository root.
-- The mirrored plugin copy lives in [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow).
-- If a file exists both at the repo root and under `skills/remote-cluster-workflow/`, treat the root copy as authoritative.
-- The PowerShell helpers under `scripts/` are intended for Windows hosts that launch remote Linux work through `ssh`.
-- The repository is designed to be easy to fork and customize for different clusters or schedulers.
-
-## License
-
-This project is released under the MIT License. See [LICENSE](./LICENSE).
-
-## Changelog
-
-Version history is tracked in [CHANGELOG.md](./CHANGELOG.md).
+这样每一轮改动都可追踪。
