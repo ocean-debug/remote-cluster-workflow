@@ -2,12 +2,12 @@
 
 Run Codex tasks on remote Linux servers or HPC clusters through SSH, a fixed remote work directory, a chosen environment, and an explicit compute allocation.
 
-This repository is packaged around one canonical skill source:
+This repository is organized around one canonical root-level skill source:
 
-- The canonical skill lives under [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow)
-- The repository also includes [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) for plugin-shaped installation
+- The canonical skill files live at the repository root: [`SKILL.md`](./SKILL.md), [`test-prompts.json`](./test-prompts.json), and [`results.tsv`](./results.tsv)
+- The repository also includes [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) and a mirrored copy under [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow) for plugin-shaped installation
 
-Do not treat root-level `SKILL.md`, `test-prompts.json`, or `results.tsv` as the source of truth. The only maintained skill copy is under `skills/remote-cluster-workflow/`.
+Treat the repository root as the source of truth. The copy under `skills/remote-cluster-workflow/` exists as a packaged mirror for plugin or marketplace-style layouts.
 
 ## What It Does
 
@@ -29,6 +29,9 @@ Do not treat root-level `SKILL.md`, `test-prompts.json`, or `results.tsv` as the
 +-- assets/
 |   +-- icon.svg
 |   +-- logo.svg
++-- SKILL.md
++-- test-prompts.json
++-- results.tsv
 +-- skills/
 |   +-- remote-cluster-workflow/
 |       +-- SKILL.md
@@ -50,22 +53,28 @@ Do not treat root-level `SKILL.md`, `test-prompts.json`, or `results.tsv` as the
 
 ### Option 1: Use It As A Skill
 
-1. Copy [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow) into your local Codex skills directory.
-   Windows example: `%USERPROFILE%\.codex\skills\remote-cluster-workflow`
-   This directory is the only maintained skill source in this repository.
-2. Copy one of the example profiles from [`remote-profiles`](./remote-profiles) into your local remote profile directory.
+1. Copy the root-level canonical skill files and folders into your local Codex skill directory, or copy the packaged mirror from [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow).
+   Windows example target: `%USERPROFILE%\.codex\skills\remote-cluster-workflow`
+2. If you are installing manually, make sure the final local skill directory contains:
+   - `SKILL.md`
+   - `test-prompts.json`
+   - `results.tsv`
+   - `references/`
+   - `scripts/`
+   - `agents/`
+3. Copy one of the example profiles from [`remote-profiles`](./remote-profiles) into your local remote profile directory.
    Windows example: `%USERPROFILE%\.codex\remote-profiles\`
-3. Edit the copied profile for your own infrastructure:
+4. Edit the copied profile for your own infrastructure:
    - `sshTarget`
    - `remoteWorkdir`
    - `environment.activate`
    - `resource.template`
    - `resource.defaults`
-4. For UV projects, point `remoteWorkdir` at the project root. Then choose one of two patterns:
+5. For UV projects, point `remoteWorkdir` at the project root. Then choose one of two patterns:
    - activate the project venv with `source .venv/bin/activate`
    - or leave activation empty and run tasks with `uv run ...`
    For quick validation, the first pattern is usually faster and more stable. `uv run ...` may sync dependencies or build native extensions if the project environment is not already ready.
-5. Use `$remote-cluster-workflow` in Codex.
+6. Use `$remote-cluster-workflow` in Codex.
 
 ### Option 2: Use It As A Plugin-Shaped Repo
 
@@ -210,8 +219,9 @@ Typical quick verification for this pattern should confirm:
 
 ## Development Notes
 
-- The skill implementation lives in [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow).
-- If a file exists both at the repo root and under `skills/remote-cluster-workflow/`, treat the `skills/` copy as authoritative.
+- The canonical skill source lives at the repository root.
+- The mirrored plugin copy lives in [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow).
+- If a file exists both at the repo root and under `skills/remote-cluster-workflow/`, treat the root copy as authoritative.
 - The PowerShell helpers under `scripts/` are intended for Windows hosts that launch remote Linux work through `ssh`.
 - The repository is designed to be easy to fork and customize for different clusters or schedulers.
 
