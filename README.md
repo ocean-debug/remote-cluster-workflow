@@ -2,10 +2,12 @@
 
 Run Codex tasks on remote Linux servers or HPC clusters through SSH, a fixed remote work directory, a chosen environment, and an explicit compute allocation.
 
-This repository is packaged in two useful ways:
+This repository is packaged around one canonical skill source:
 
-- As a reusable Codex skill under [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow)
-- As an install-ready plugin-shaped repository with [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json)
+- The canonical skill lives under [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow)
+- The repository also includes [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) for plugin-shaped installation
+
+Do not treat root-level `SKILL.md`, `test-prompts.json`, or `results.tsv` as the source of truth. The only maintained skill copy is under `skills/remote-cluster-workflow/`.
 
 ## What It Does
 
@@ -30,6 +32,9 @@ This repository is packaged in two useful ways:
 +-- skills/
 |   +-- remote-cluster-workflow/
 |       +-- SKILL.md
+|       +-- README.md
+|       +-- test-prompts.json
+|       +-- results.tsv
 |       +-- agents/openai.yaml
 |       +-- references/
 |       +-- scripts/
@@ -47,6 +52,7 @@ This repository is packaged in two useful ways:
 
 1. Copy [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow) into your local Codex skills directory.
    Windows example: `%USERPROFILE%\.codex\skills\remote-cluster-workflow`
+   This directory is the only maintained skill source in this repository.
 2. Copy one of the example profiles from [`remote-profiles`](./remote-profiles) into your local remote profile directory.
    Windows example: `%USERPROFILE%\.codex\remote-profiles\`
 3. Edit the copied profile for your own infrastructure:
@@ -205,6 +211,7 @@ Typical quick verification for this pattern should confirm:
 ## Development Notes
 
 - The skill implementation lives in [`skills/remote-cluster-workflow`](./skills/remote-cluster-workflow).
+- If a file exists both at the repo root and under `skills/remote-cluster-workflow/`, treat the `skills/` copy as authoritative.
 - The PowerShell helpers under `scripts/` are intended for Windows hosts that launch remote Linux work through `ssh`.
 - The repository is designed to be easy to fork and customize for different clusters or schedulers.
 
